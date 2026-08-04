@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
 from app.schemas import Token
 from app.core.security import verify_password, create_access_token
+from app.services import user_service
 
 router = APIRouter()
 
@@ -27,8 +27,8 @@ def login(
     Raises:
         HTTPException: 401 if credentials are incorrect
     """
-    # Query user by username
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # Query user by username using user_service
+    user = user_service.get_user_by_username(db, form_data.username)
     
     # Verify user exists and password is correct
     if not user or not verify_password(form_data.password, user.hashed_password):
