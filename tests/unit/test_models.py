@@ -294,3 +294,89 @@ class TestPydanticSchemas:
         assert forecast_data.predicted_expenditure == Decimal("30000.00")
         dump = forecast_data.model_dump()
         assert "predicted_expenditure" in dump
+    
+    def test_department_read_schema(self):
+        """Test DepartmentRead schema."""
+        dept_data = DepartmentRead(
+            department_id="DEPT01",
+            department_name="Engineering",
+            department_type="Technical"
+        )
+        assert dept_data.department_id == "DEPT01"
+        assert dept_data.department_name == "Engineering"
+        dump = dept_data.model_dump()
+        assert "department_name" in dump
+    
+    def test_budget_read_schema(self):
+        """Test BudgetRead schema with Decimal."""
+        budget_data = BudgetRead(
+            id=1,
+            department_id="DEPT01",
+            fiscal_year=2024,
+            budget_allocation=Decimal("100000.50")
+        )
+        assert budget_data.id == 1
+        assert budget_data.budget_allocation == Decimal("100000.50")
+        dump = budget_data.model_dump()
+        assert "budget_allocation" in dump
+    
+    def test_transaction_read_schema(self):
+        """Test TransactionRead schema."""
+        txn_data = TransactionRead(
+            transaction_id="TXN001",
+            department_id="DEPT01",
+            fiscal_year=2024,
+            fiscal_month=3,
+            transaction_date=date(2024, 3, 15),
+            transaction_amount=Decimal("5000.00"),
+            expenditure_category="Software",
+            vendor_category="IT Services",
+            monthly_expenditure=Decimal("25000.00"),
+            budget_utilization_percentage=Decimal("20.0000"),
+            expenditure_variance=None,
+            historical_average_expenditure=None,
+            expenditure_growth_rate=None,
+            is_anomaly_ground_truth=0,
+            anomaly_type_ground_truth="Normal",
+            created_at=date(2024, 3, 15)
+        )
+        assert txn_data.transaction_id == "TXN001"
+        assert txn_data.transaction_amount == Decimal("5000.00")
+        dump = txn_data.model_dump()
+        assert "transaction_id" in dump
+    
+    def test_budget_utilization_report_read_schema(self):
+        """Test BudgetUtilizationReportRead schema."""
+        report_data = BudgetUtilizationReportRead(
+            id=1,
+            department_id="DEPT01",
+            fiscal_year=2024,
+            fiscal_month=3,
+            expenditure_category="Software",
+            total_transaction_amount=Decimal("25000.00"),
+            monthly_expenditure=Decimal("25000.00"),
+            budget_allocation=Decimal("100000.00"),
+            utilization_percentage=Decimal("25.0000"),
+            computed_at=datetime.now()
+        )
+        assert report_data.id == 1
+        assert report_data.utilization_percentage == Decimal("25.0000")
+        dump = report_data.model_dump()
+        assert "utilization_percentage" in dump
+    
+    def test_trend_summary_read_schema(self):
+        """Test TrendSummaryRead schema."""
+        trend_data = TrendSummaryRead(
+            id=1,
+            department_id="DEPT01",
+            fiscal_year=2024,
+            total_annual_expenditure=Decimal("300000.00"),
+            avg_monthly_expenditure=Decimal("25000.00"),
+            avg_growth_rate=Decimal("0.05"),
+            variance_from_historical_avg=Decimal("5000.00"),
+            computed_at=datetime.now()
+        )
+        assert trend_data.id == 1
+        assert trend_data.total_annual_expenditure == Decimal("300000.00")
+        dump = trend_data.model_dump()
+        assert "total_annual_expenditure" in dump
