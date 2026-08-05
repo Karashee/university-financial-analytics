@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
@@ -38,6 +38,6 @@ class TransactionRead(BaseModel):
     expenditure_growth_rate: Optional[Decimal]
     is_anomaly_ground_truth: Optional[int]
     anomaly_type_ground_truth: Optional[str]
-    created_at: Optional[date]
+    created_at: Optional[datetime]
     
     model_config = ConfigDict(from_attributes=True)
