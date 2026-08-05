@@ -4,18 +4,25 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.logging import get_logger
 from app.core.rbac import any_authenticated, finance_or_admin, get_dept_filter
 from app.database import get_db
 from app.models import User
 from app.services import anomaly_service
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/detect", dependencies=[finance_or_admin])
 def detect_anomalies(db: Session = Depends(get_db)):
     """Retrain the Isolation Forest on all transactions and rescore every row."""
-    return anomaly_service.run_anomaly_detection(db)
+    result = anomaly_service.run_anomaly_detection(db)
+    logger.info(
+        "Anomaly detection run: %d scored, %d flagged",
+        result["total_scored"], result["flagged_count"],
+    )
+    return result
 
 
 @router.get("/results")

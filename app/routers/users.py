@@ -1,6 +1,7 @@
 """User management endpoints."""
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from app.core.logging import get_logger
 from app.database import get_db
 from app.schemas import UserCreate, UserRead
 from app.services import user_service
@@ -8,6 +9,7 @@ from app.core.rbac import admin_only
 from app.models import User
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("", response_model=UserRead, dependencies=[admin_only])
@@ -35,6 +37,7 @@ def create_user(
         role_id=user_data.role_id,
         department_id=user_data.department_id
     )
+    logger.info("Created user %s (role_id=%s)", user.username, user.role_id)
     return user
 
 

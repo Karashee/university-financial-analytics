@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.logging import get_logger
 from app.core.rbac import any_authenticated, finance_or_admin, get_dept_filter
 from app.database import get_db
 from app.models import User
@@ -11,12 +12,14 @@ from app.schemas import BudgetUtilizationReportRead
 from app.services import analytics_service
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/compute/budget-utilization", dependencies=[finance_or_admin])
 def compute_budget_utilization(db: Session = Depends(get_db)):
     """Recompute the budget utilization report from live transaction/budget data."""
     rows_written = analytics_service.compute_budget_utilization(db)
+    logger.info("Computed budget utilization: %d rows written", rows_written)
     return {"rows_written": rows_written}
 
 

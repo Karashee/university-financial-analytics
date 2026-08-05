@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from app.core.logging import get_logger
 from app.database import get_db
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.get("/health")
 def health_check(db: Session = Depends(get_db)):
     """
     Health check endpoint that verifies database connectivity.
-    
+
     Returns:
         dict: Status and database connection state
     """
@@ -20,4 +22,5 @@ def health_check(db: Session = Depends(get_db)):
         return {"status": "ok", "database": "connected"}
     except Exception:
         # Don't raise, just report database as unavailable
+        logger.warning("Health check: database connection unavailable")
         return {"status": "ok", "database": "unavailable"}

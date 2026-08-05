@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.logging import get_logger
 from app.core.rbac import any_authenticated, finance_or_admin, get_dept_filter
 from app.database import get_db
 from app.models import User
@@ -11,12 +12,15 @@ from app.schemas import TransactionCreate, TransactionRead
 from app.services import transaction_service
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("", response_model=TransactionRead, dependencies=[finance_or_admin])
 def create_transaction(data: TransactionCreate, db: Session = Depends(get_db)):
     """Create a transaction from manual entry. Requires finance_officer or admin role."""
-    return transaction_service.create_transaction(db, data)
+    transaction = transaction_service.create_transaction(db, data)
+    logger.info("Created transaction %s", transaction.transaction_id)
+    return transaction
 
 
 @router.get("", response_model=list[TransactionRead])
@@ -58,5 +62,6 @@ def get_transaction(transaction_id: str, db: Session = Depends(get_db)):
     """Get a single transaction by ID."""
     transaction = transaction_service.get_transaction(db, transaction_id)
     if transaction is None:
+        logger.warning("Transaction not found: %s", transaction_id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
     return transaction

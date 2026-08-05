@@ -4,23 +4,31 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.logging import get_logger
 from app.core.rbac import any_authenticated, finance_or_admin, get_dept_filter
 from app.database import get_db
 from app.models import User
 from app.services import forecast_service
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/run", dependencies=[finance_or_admin])
 def run_forecast(n_months: int = 3, db: Session = Depends(get_db)):
     """Retrain the LR model and generate expenditure forecasts n_months ahead."""
     if not (1 <= n_months <= 12):
+        logger.warning("Rejected forecast run: n_months=%s out of range", n_months)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="n_months must be between 1 and 12"
         )
-    return forecast_service.run_expenditure_forecast(db, n_months=n_months)
+    result = forecast_service.run_expenditure_forecast(db, n_months=n_months)
+    logger.info(
+        "Forecast run: %d forecasts generated, mae_context=%.2f",
+        result["total_forecasts"], result["mae_context"],
+    )
+    return result
 
 
 @router.get("")

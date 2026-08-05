@@ -5,11 +5,13 @@ import tempfile
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.logging import get_logger
 from app.core.rbac import finance_or_admin
 from app.database import get_db
 from app.services.ingestion import ingest_csv
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/csv", dependencies=[finance_or_admin])
@@ -30,4 +32,8 @@ def upload_csv(
         result = ingest_csv(db, tmp_path)
     finally:
         os.remove(tmp_path)
+    logger.info(
+        "CSV ingested: %d inserted, %d skipped, %d rejected",
+        result["inserted_rows"], result["skipped_rows"], len(result["rejected_rows"]),
+    )
     return result
