@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -42,7 +44,11 @@ def get_current_user(
         raise credentials_exception
     
     # Query user from database
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        raise credentials_exception
+    user = db.query(User).filter(User.id == user_uuid).first()
     if user is None:
         raise credentials_exception
     
