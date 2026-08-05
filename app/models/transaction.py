@@ -21,4 +21,4 @@ class ExpenditureTransaction(Base):
     expenditure_growth_rate = Column(Numeric(10, 4), nullable=True)
     is_anomaly_ground_truth = Column(Integer, server_default="0", default=0)
     anomaly_type_ground_truth = Column(String(100), server_default="'Normal'", default="Normal")
-    created_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    created_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())
