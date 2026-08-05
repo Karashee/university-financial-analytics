@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import health, auth, users, ingest
+from app.routers import health, auth, users, ingest, departments, transactions
 
 app = FastAPI(
     title="Financial Analytics System",
@@ -11,6 +11,8 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(ingest.router, prefix="/ingest", tags=["ingest"])
+app.include_router(departments.router, tags=["departments"])
+app.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
 
 
 @app.get("/")
