@@ -19,7 +19,7 @@ class AnomalyResult(Base):
     is_anomaly_predicted = Column(Boolean, nullable=False)
     explanation = Column(String(500), nullable=True)
     model_version = Column(String(50), nullable=True)
-    detected_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    detected_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())
 
 
 class ForecastResult(Base):
@@ -37,7 +37,7 @@ class ForecastResult(Base):
     predicted_expenditure = Column(Numeric(15, 2), nullable=False)
     mae_context = Column(Numeric(15, 2), nullable=True)
     model_version = Column(String(50), nullable=True)
-    generated_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    generated_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())
 
 
 class BudgetUtilizationReport(Base):
@@ -52,7 +52,7 @@ class BudgetUtilizationReport(Base):
     monthly_expenditure = Column(Numeric(15, 2), nullable=True)
     budget_allocation = Column(Numeric(15, 2), nullable=True)
     utilization_percentage = Column(Numeric(8, 4), nullable=True)
-    computed_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    computed_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())
 
 
 class TrendSummary(Base):
@@ -65,4 +65,4 @@ class TrendSummary(Base):
     avg_monthly_expenditure = Column(Numeric(15, 2), nullable=True)
     avg_growth_rate = Column(Numeric(10, 4), nullable=True)
     variance_from_historical_avg = Column(Numeric(15, 2), nullable=True)
-    computed_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    computed_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())

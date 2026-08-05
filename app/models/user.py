@@ -21,7 +21,7 @@ class User(Base):
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
     department_id = Column(String(10), ForeignKey("departments.department_id"), nullable=True)
     is_active = Column(Boolean, server_default="true", default=True)
-    created_at = Column(TIMESTAMP, server_default=func.now(), default=func.now)
+    created_at = Column(TIMESTAMP, server_default=func.now(), default=func.now())
     
     # Relationships
     role = relationship("Role")
