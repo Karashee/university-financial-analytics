@@ -45,6 +45,7 @@ class BudgetUtilizationReportRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+
 class TrendSummaryRead(BaseModel):
     id: int
     department_id: Optional[str]

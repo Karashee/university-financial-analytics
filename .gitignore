@@ -37,3 +37,7 @@ data/*.csv
 # OS
 .DS_Store
 Thumbs.db
+
+CLAUDE.md
+KIROFINALPLAN_v6.md
+WEBAPP_PLAN.md
