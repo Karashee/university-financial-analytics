@@ -1,0 +1,615 @@
+/* ==========================================================================
+   Financial Analytics - web interface styles
+   Design tokens and reusable classes. No external fonts, icons or scripts:
+   everything is local so the demo works with no internet connection.
+   ========================================================================== */
+
+/* --- Design tokens ------------------------------------------------------- */
+
+:root {
+  /* Colour */
+  --bg: #F5F6F8;
+  --surface: #FFFFFF;
+  --border: #E3E6EA;
+  --text: #1A1D21;
+  --muted: #5F6B76;
+  --accent: #107C41;
+  --accent-hover: #0B6334;
+  --accent-soft: #E7F4EC;
+  --danger: #C4314B;
+  --danger-soft: #FBEAEE;
+  --warning: #9A6700;
+  --warning-soft: #FDF4E3;
+
+  /* Type */
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --text-base: 15px;
+  --text-label: 13px;
+  --text-section: 17px;
+  --text-page: 24px;
+
+  /* 8px spacing scale */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+
+  /* Shape */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --control-height: 40px;
+  --topbar-height: 56px;
+  --content-max: 960px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, .06);
+}
+
+/* --- Base ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* Tabular figures wherever numbers are compared down a column. */
+.num,
+.stat-tile__value,
+.table td,
+.table th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Focus ring (every interactive element) ------------------------------ */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Top bar ------------------------------------------------------------- */
+
+.topbar {
+  height: var(--topbar-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__inner {
+  height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.topbar__title {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.topbar__username {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* CSS-only logo mark: accent square with white "FA". */
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.logo-mark--lg {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+  border-radius: 10px;
+  font-size: 17px;
+}
+
+/* --- Page container ------------------------------------------------------ */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-6);
+}
+
+.page__heading {
+  font-size: var(--text-page);
+  font-weight: 600;
+}
+
+.page__subheading {
+  margin-top: var(--space-1);
+  color: var(--muted);
+}
+
+/* --- Card ---------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3);
+}
+
+.card + .card {
+  margin-top: var(--space-3);
+}
+
+.section-heading {
+  font-size: var(--text-section);
+  font-weight: 600;
+}
+
+.section-description {
+  margin-top: var(--space-1);
+  color: var(--muted);
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn:disabled,
+.btn.is-disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* Text button: "Sign out" and small inline refresh actions. */
+.btn-text {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-text:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* --- Spinner ------------------------------------------------------------- */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+
+/* The in-button spinner only appears while that button is working. */
+.btn__spinner {
+  display: none;
+}
+
+.btn.is-loading .btn__spinner {
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* --- Inputs -------------------------------------------------------------- */
+
+.field + .field {
+  margin-top: var(--space-2);
+}
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+}
+
+.input,
+.select {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+}
+
+.input:hover,
+.select:hover {
+  border-color: var(--muted);
+}
+
+.select {
+  cursor: pointer;
+}
+
+/* --- Banners ------------------------------------------------------------- */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: 10px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+}
+
+/* Icon plus text, so colour is never the only signal. */
+.banner__icon {
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.banner--error {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.banner--warning {
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.banner--success {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.banner--info {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+/* --- Pills --------------------------------------------------------------- */
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill--role {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.pill--danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.pill--warning {
+  background: var(--warning-soft);
+  border-color: var(--warning-soft);
+  color: var(--warning);
+}
+
+.pill--neutral {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+/* --- Stat tiles ---------------------------------------------------------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+
+.stat-tile {
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.stat-tile__label {
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+}
+
+.stat-tile__value {
+  margin-top: 6px;
+  font-size: var(--text-page);
+  font-weight: 600;
+}
+
+.stat-tile__meta {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+.stat-tile--danger .stat-tile__value {
+  color: var(--danger);
+}
+
+/* --- Tables -------------------------------------------------------------- */
+
+/* Wide tables scroll inside their card rather than breaking the layout. */
+.table-scroll {
+  overflow: auto;
+  max-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 600;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table th--numeric,
+.table td--numeric {
+  text-align: right;
+}
+
+.table tr.is-rejected td {
+  background: var(--danger-soft);
+}
+
+.table__empty {
+  padding: var(--space-3);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* --- Login page ---------------------------------------------------------- */
+
+.login-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-card__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.login-card__title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.login-card__subtitle {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.login-card__form {
+  margin-top: var(--space-3);
+}
+
+.login-card__actions {
+  margin-top: var(--space-3);
+}
+
+.login-card__banner {
+  margin-top: var(--space-2);
+}
+
+.login-footer {
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+/* --- Utilities ----------------------------------------------------------- */
+
+.stack-1 > * + * {
+  margin-top: var(--space-1);
+}
+
+.stack-2 > * + * {
+  margin-top: var(--space-2);
+}
+
+.stack-3 > * + * {
+  margin-top: var(--space-3);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Responsive (usable down to 768px) ----------------------------------- */
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .topbar__inner {
+    padding: 0 var(--space-2);
+  }
+
+  .topbar__username {
+    display: none;
+  }
+
+  .card {
+    padding: var(--space-2);
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}

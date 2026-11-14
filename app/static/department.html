@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Department view - Financial Analytics</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="top-bar"></div>
+
+  <main class="page">
+    <h1 class="page__heading" id="department-heading">Department view</h1>
+    <p class="page__subheading">
+      Read-only view. The server restricts all data on this page to your department.
+    </p>
+  </main>
+
+  <!-- Placeholder page. Chunk 26 adds the flagged-transactions and forecast
+       cards and moves this bootstrap into app/static/js/department.js. -->
+  <script type="module">
+    import { requireRole } from "./js/api.js";
+    import { renderTopBar } from "./js/layout.js";
+
+    const user = await requireRole(["department_head"]);
+    if (user) {
+      renderTopBar(user);
+      if (user.department_name) {
+        document.querySelector("#department-heading").textContent = user.department_name;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data ingestion &amp; analysis - Financial Analytics</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="top-bar"></div>
+
+  <main class="page">
+    <h1 class="page__heading">Data ingestion &amp; analysis</h1>
+    <p class="page__subheading">
+      Upload departmental expenditure records, validate them, and run the analytical pipeline.
+    </p>
+  </main>
+
+  <!-- Placeholder page. Chunks 24-25 add the upload, analysis and results
+       sections and move this bootstrap into app/static/js/workspace.js. -->
+  <script type="module">
+    import { requireRole } from "./js/api.js";
+    import { renderTopBar } from "./js/layout.js";
+
+    const user = await requireRole(["admin", "finance_officer"]);
+    if (user) {
+      renderTopBar(user);
+    }
+  </script>
+</body>
+</html>

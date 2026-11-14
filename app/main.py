@@ -1,13 +1,19 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.logging import get_logger
 from app.routers import health, auth, users, ingest, departments, transactions, analytics, reporting, anomaly, forecasts, logs
 
 logger = get_logger(__name__)
+
+# Static web interface, served from app/static at /ui.
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 OPENAPI_TAGS = [
     {"name": "auth", "description": "Authentication and JWT access token issuance."},
@@ -78,6 +84,9 @@ app.include_router(reporting.router, prefix="/reporting", tags=["reporting"])
 app.include_router(anomaly.router, prefix="/anomaly", tags=["anomaly"])
 app.include_router(forecasts.router, prefix="/forecasts", tags=["forecasts"])
 app.include_router(logs.router, prefix="/logs", tags=["logs"])
+
+# Plain HTML/CSS/JS web interface. html=True serves index.html for /ui/.
+app.mount("/ui", StaticFiles(directory=STATIC_DIR, html=True), name="ui")
 
 
 @app.get("/")
