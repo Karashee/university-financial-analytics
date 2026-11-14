@@ -3,6 +3,7 @@ from app.models.role import Role
 from app.models.user import User
 from app.models.department import Department, Budget
 from app.models.transaction import ExpenditureTransaction
+from app.models.system_log import SystemLog
 from app.models.analytics import (
     AnomalyResult,
     ForecastResult,
@@ -20,5 +21,6 @@ __all__ = [
     "AnomalyResult",
     "ForecastResult",
     "BudgetUtilizationReport",
-    "TrendSummary"
+    "TrendSummary",
+    "SystemLog"
 ]

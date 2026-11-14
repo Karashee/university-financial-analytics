@@ -6,6 +6,14 @@ PostgreSQL view tests (Chunks 11, 14, 17) use TEST_DATABASE_URL and must be run
 separately with a live PostgreSQL test database.
 Do NOT mix SQLite and view tests.
 """
+import os
+
+# Database logging off for the whole test session. Set before any app import so
+# pydantic-settings picks it up when app.config builds Settings - an env var
+# takes precedence over the .env file. Without this, tests would write log rows
+# into the development database.
+os.environ["DB_LOGGING_ENABLED"] = "false"
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

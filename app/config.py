@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
     debug: bool = False
+    db_logging_enabled: bool = True
     
     model_config = SettingsConfigDict(env_file=".env")
 

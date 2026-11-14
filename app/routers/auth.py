@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.logging import get_logger
+from app.core.rbac import any_authenticated
 from app.database import get_db
+from app.models import User
 from app.schemas import Token
 from app.core.security import verify_password, create_access_token
 from app.services import user_service
@@ -46,3 +48,23 @@ def login(
     logger.info("User %s logged in successfully", user.username)
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me")
+def read_current_user(current_user: User = any_authenticated):
+    """
+    Return the signed-in user's identity, role and department.
+
+    Available to any authenticated user. department_id and department_name are
+    null for users who are not tied to a department (admin, finance officer).
+    """
+    return {
+        "username": current_user.username,
+        "role": current_user.role.name,
+        "department_id": current_user.department_id,
+        "department_name": (
+            current_user.department.department_name
+            if current_user.department is not None
+            else None
+        ),
+    }

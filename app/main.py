@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.logging import get_logger
-from app.routers import health, auth, users, ingest, departments, transactions, analytics, reporting, anomaly, forecasts
+from app.routers import health, auth, users, ingest, departments, transactions, analytics, reporting, anomaly, forecasts, logs
 
 logger = get_logger(__name__)
 
@@ -19,6 +19,7 @@ OPENAPI_TAGS = [
     {"name": "reporting", "description": "Annual department trend summary reporting."},
     {"name": "anomaly", "description": "Isolation Forest anomaly detection over expenditure transactions."},
     {"name": "forecasts", "description": "Linear Regression expenditure forecasting."},
+    {"name": "logs", "description": "Application audit log of pipeline actions and errors."},
 ]
 
 app = FastAPI(
@@ -76,6 +77,7 @@ app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 app.include_router(reporting.router, prefix="/reporting", tags=["reporting"])
 app.include_router(anomaly.router, prefix="/anomaly", tags=["anomaly"])
 app.include_router(forecasts.router, prefix="/forecasts", tags=["forecasts"])
+app.include_router(logs.router, prefix="/logs", tags=["logs"])
 
 
 @app.get("/")
