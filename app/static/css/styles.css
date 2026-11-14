@@ -613,3 +613,219 @@ textarea:focus-visible,
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 }
+
+/* ==========================================================================
+   Workspace: numbered sections, upload drop zone, column check
+   ========================================================================== */
+
+/* --- Numbered section cards ---------------------------------------------- */
+
+.section-card {
+  /* A locked section eases to the normal card surface when it unlocks. */
+  transition: background-color .2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-card {
+    transition: none;
+  }
+}
+
+.section-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.section-card__body {
+  margin-top: var(--space-2);
+}
+
+/* A locked section stays visible but reads as not yet available. */
+.section-card--locked {
+  background: var(--bg);
+}
+
+.section-card--locked .section-number {
+  background: var(--border);
+  color: var(--muted);
+}
+
+.section-card--locked .section-heading {
+  color: var(--muted);
+}
+
+.section-locked-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* --- Drop zone ----------------------------------------------------------- */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropzone:hover {
+  border-color: var(--accent);
+}
+
+/* Highlight while a file is dragged over the zone. */
+.dropzone--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.dropzone__icon {
+  color: var(--accent);
+}
+
+.dropzone--active .dropzone__icon {
+  color: var(--accent-hover);
+}
+
+.dropzone__text {
+  font-size: 14px;
+}
+
+.dropzone__browse {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.dropzone--active .dropzone__browse {
+  color: var(--accent-hover);
+}
+
+.dropzone__hint {
+  font-size: var(--text-label);
+}
+
+/* --- Selected file chip -------------------------------------------------- */
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.file-chip__icon {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.file-chip__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip__size {
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.file-chip__remove {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* --- Column check grid --------------------------------------------------- */
+
+.column-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px var(--space-2);
+}
+
+.column-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+/* Icon plus text: the tick or cross is never the only signal. */
+.column-check__icon {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.column-check--present .column-check__icon {
+  color: var(--accent);
+}
+
+.column-check--missing {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.column-check--missing .column-check__icon {
+  color: var(--danger);
+}
+
+.column-check--ignored {
+  color: var(--muted);
+}
+
+.column-check__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-check__tag {
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+/* --- Inline field-level error ------------------------------------------- */
+
+.inline-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.inline-error__icon {
+  font-weight: 700;
+}
