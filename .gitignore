@@ -26,6 +26,7 @@ ENV/
 
 # Data files
 data/*.csv
+data/demo_upload.csv
 
 # IDE
 .vscode/
@@ -41,3 +42,5 @@ Thumbs.db
 CLAUDE.md
 KIROFINALPLAN_v6.md
 WEBAPP_PLAN.md
+
+!data/synthetic_university_financial_data_final.csv
