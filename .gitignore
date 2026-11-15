@@ -44,3 +44,7 @@ KIROFINALPLAN_v6.md
 WEBAPP_PLAN.md
 
 !data/synthetic_university_financial_data_final.csv
+
+# Database backups
+backup_full_before_demo.sql
+*.sql

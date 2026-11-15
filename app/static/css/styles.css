@@ -161,7 +161,7 @@ textarea:focus-visible,
   border-radius: 6px;
   background: var(--accent);
   color: #FFFFFF;
-  font-size: 12px;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: .5px;
 }
@@ -480,7 +480,7 @@ textarea:focus-visible,
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 .table th,
@@ -544,14 +544,14 @@ textarea:focus-visible,
 }
 
 .login-card__title {
-  font-size: 20px;
+  font-size: var(--text-page);
   font-weight: 600;
 }
 
 .login-card__subtitle {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 .login-card__form {
@@ -658,7 +658,7 @@ textarea:focus-visible,
   border-radius: 6px;
   background: var(--accent-soft);
   color: var(--accent-hover);
-  font-size: 14px;
+  font-size: var(--text-label);
   font-weight: 700;
 }
 
@@ -685,7 +685,7 @@ textarea:focus-visible,
   align-items: center;
   gap: var(--space-1);
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 /* --- Drop zone ----------------------------------------------------------- */
@@ -725,7 +725,7 @@ textarea:focus-visible,
 }
 
 .dropzone__text {
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 .dropzone__browse {
@@ -790,7 +790,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 /* Icon plus text: the tick or cross is never the only signal. */
@@ -834,7 +834,7 @@ textarea:focus-visible,
   align-items: flex-start;
   gap: 6px;
   color: var(--danger);
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 .inline-error__icon {
@@ -969,7 +969,7 @@ textarea:focus-visible,
   gap: var(--space-2);
   padding: 6px var(--space-2);
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 
 .activity-row:last-child {

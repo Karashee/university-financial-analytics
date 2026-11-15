@@ -61,8 +61,8 @@ createdb financial_analytics
 alembic upgrade head
 ```
 
-This applies all 4 migrations: the 9-table schema (with the `uuid-ossp` extension) and the
-7 Power BI reporting views described in section 12.
+This applies all 5 migrations: the schema (with the `uuid-ossp` extension) and the
+8 Power BI reporting views described in section 12.
 
 ## 6. Seed Data
 
@@ -143,6 +143,7 @@ users are additionally scoped to their own department's data on every GET listed
 | GET    | `/`                                          | none                  | API info                                          |
 | GET    | `/health`                                    | none                  | Database connectivity check                       |
 | POST   | `/auth/token`                                | none                  | Login, obtain a JWT access token                  |
+| GET    | `/auth/me`                                   | any_authenticated     | Signed-in user identity, role and department      |
 | POST   | `/users`                                     | admin                 | Create a user                                     |
 | GET    | `/users`                                     | admin                 | List users                                        |
 | POST   | `/ingest/csv`                                | finance_officer/admin | Bulk ingest a CSV of expenditure transactions     |
@@ -164,6 +165,7 @@ users are additionally scoped to their own department's data on every GET listed
 | GET    | `/anomaly/results`                           | any_authenticated     | List anomaly detection results                    |
 | POST   | `/forecasts/run`                             | finance_officer/admin | Retrain the Linear Regression model and forecast  |
 | GET    | `/forecasts`                                 | any_authenticated     | List forecast results                             |
+| GET    | `/logs`                                      | finance_officer/admin | List audit log entries, newest first              |
 
 ## 12. Power BI Connection Guide
 
@@ -175,7 +177,7 @@ source CSV. In Power BI Desktop: **Get Data → PostgreSQL database**, then supp
 - **Database**: `financial_analytics`
 - **Username / password**: your PostgreSQL credentials with read access to the database
 
-All 7 views below are created via Alembic migrations and are safe to connect to directly:
+All 8 views below are created via Alembic migrations and are safe to connect to directly:
 
 | View                          | Migration | Purpose                                                          |
 | ------------------------------ | --------- | ------------------------------------------------------------------ |
@@ -186,3 +188,76 @@ All 7 views below are created via Alembic migrations and are safe to connect to 
 | `vw_anomaly_flagged`           | 0003      | All Isolation-Forest-flagged transactions with full context        |
 | `vw_anomaly_comparison`        | 0003      | Ground-truth anomaly labels vs. model predictions                  |
 | `vw_forecast_vs_actuals`       | 0004      | Linear Regression forecasts compared to trend summary actuals      |
+| `vw_system_activity`           | 0005      | Application audit trail of pipeline actions and errors             |
+
+## 13. Web Interface
+
+A plain HTML/CSS/JavaScript interface is served by the application itself from `app/static`.
+It has no build step, no framework and makes no external requests.
+
+### Start it
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Then open [http://localhost:8000/ui/](http://localhost:8000/ui/).
+
+### Demo users
+
+Seeded by `scripts/seed_data.py` (see section 6). **Local development only.**
+
+| Username   | Password       | Role               | Lands on        | Can do                                                                 |
+| ---------- | -------------- | ------------------ | --------------- | ---------------------------------------------------------------------- |
+| `finance`  | `Finance@123`  | `finance_officer`  | Workspace       | Upload a CSV, run the full analysis pipeline, see results and activity |
+| `admin`    | `Admin@123`    | `admin`            | Workspace       | The same as the finance officer, plus user and department management via the API |
+| `depthead` | `DeptHead@123` | `department_head`  | Department view | Read-only: flagged transactions and the forecast for their own department only |
+
+Role routing happens after sign-in: `admin` and `finance_officer` go to the workspace,
+`department_head` goes to the department view. The restriction is enforced on the server, not in the
+browser - a department head who requests the workspace page is redirected, and every API response is
+filtered to their `department_id` regardless of what the client asks for.
+
+### Demo procedure
+
+1. **Reset** - `python -m scripts.reset_demo --yes` empties the transaction, analytics, forecast,
+   anomaly and audit-log tables, keeping roles, users and departments.
+2. **Refresh Power BI** - every page should render empty without errors. This is the "before" state.
+3. **Upload** - sign in at `/ui/` as `finance`, drop `data/demo_upload.csv` on the upload panel,
+   check the column report, then upload. Three rows are deliberately rejected - budget utilization
+   above 100% (`RULE_1_UTILIZATION`), a negative amount (`RULE_2_AMOUNT`), and a transaction date whose
+   month does not match its fiscal period (`RULE_5_DATE`) - and are listed with their reasons.
+4. **Run analysis** - pick a forecast horizon and click **Run analysis**. The four pipeline steps run
+   in order: budget utilization, trend summaries, anomaly detection (Isolation Forest), then
+   expenditure forecasting (Linear Regression). Results and recent activity appear when it finishes.
+5. **Refresh Power BI** - the same report pages now render the full analysis. This is the "after" state.
+
+To verify the whole flow without clicking through it, run `python -m scripts.smoke_demo` against a
+running server (see section 14).
+
+### How the two interfaces fit together
+
+The web app is the **operational interface**: data enters through it, is validated against the
+expected CSV schema and the business rules, is written to PostgreSQL, and triggers the analytics and
+ML pipeline through the API. Power BI is the **reporting interface**: it reads the finished results
+straight from the PostgreSQL views listed in section 12 on each refresh, never from FastAPI and never
+from a CSV. The two never talk to each other - PostgreSQL is the only thing they share. Every
+pipeline action and error is written to the `system_logs` table by the application logger, so the
+audit log in the workspace, the `GET /logs` endpoint and the `vw_system_activity` Power BI view are
+three views of the same audit trail.
+
+## 14. End-to-End Smoke Test
+
+```bash
+python -m scripts.reset_demo --yes
+uvicorn app.main:app --reload          # in a second terminal
+python -m scripts.smoke_demo           # --server-url to point elsewhere
+```
+
+`scripts/smoke_demo.py` drives a running server through the whole demo path with `httpx`: sign in as
+the finance officer, ingest `data/demo_upload.csv` and confirm the three expected rejection rules,
+run the four pipeline steps in order and check each response, read back `GET /logs` to confirm every
+pipeline action was recorded, then sign in as the department head and confirm that every anomaly and
+forecast row returned belongs to their own department. It prints a `PASS`/`FAIL` line per check and
+exits non-zero if any check fails. It does not reset the database itself - run `reset_demo --yes`
+first for a clean run.
