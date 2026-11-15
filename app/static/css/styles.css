@@ -74,6 +74,17 @@ p {
   margin: 0;
 }
 
+/*
+ * The hidden attribute must always win.
+ * Author rules such as `.banner { display: flex }` live in the author origin
+ * and so override the user agent's `[hidden] { display: none }` regardless of
+ * specificity, which left banners and notes on screen after JS had hidden
+ * them. !important keeps hidden authoritative for any component added later.
+ */
+[hidden] {
+  display: none !important;
+}
+
 /* Tabular figures wherever numbers are compared down a column. */
 .num,
 .stat-tile__value,
