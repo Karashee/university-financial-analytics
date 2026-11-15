@@ -505,8 +505,8 @@ textarea:focus-visible,
   border-bottom: none;
 }
 
-.table th--numeric,
-.table td--numeric {
+.table th.th--numeric,
+.table td.td--numeric {
   text-align: right;
 }
 
@@ -839,4 +839,177 @@ textarea:focus-visible,
 
 .inline-error__icon {
   font-weight: 700;
+}
+
+/* ==========================================================================
+   Workspace: analysis stepper, results callout, activity panel
+   ========================================================================== */
+
+/* --- Narrow control (forecast horizon) ----------------------------------- */
+
+.field--narrow {
+  max-width: 200px;
+}
+
+/* --- Analysis stepper ---------------------------------------------------- */
+
+.stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.stepper__row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.stepper__row:last-child {
+  border-bottom: none;
+}
+
+.stepper__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex: 0 0 20px;
+}
+
+.stepper__glyph {
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.stepper__name {
+  font-weight: 600;
+}
+
+.stepper__result {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper__time {
+  min-width: 52px;
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Status is carried by the glyph and the text, not by colour alone. */
+.stepper__row--running .stepper__name {
+  color: var(--text);
+}
+
+.stepper__row--done .stepper__glyph {
+  color: var(--accent);
+}
+
+.stepper__row--failed .stepper__glyph,
+.stepper__row--failed .stepper__result {
+  color: var(--danger);
+}
+
+.stepper__row--failed .stepper__result {
+  font-weight: 600;
+}
+
+.stepper__row--pending .stepper__name {
+  color: var(--muted);
+}
+
+/* --- Accent callout ------------------------------------------------------ */
+
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--accent-soft);
+  border-radius: var(--radius-control);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.callout__icon {
+  flex: 0 0 auto;
+  color: var(--accent-hover);
+}
+
+/* --- Recent system activity --------------------------------------------- */
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.activity-list {
+  margin-top: var(--space-1);
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: 74px 86px 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+.activity-row__time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-row__message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .stepper__row {
+    grid-template-columns: 20px 1fr auto;
+  }
+
+  /* Result text drops to its own line so long errors stay readable. */
+  .stepper__result {
+    grid-column: 2 / -1;
+    white-space: normal;
+  }
+
+  .activity-row {
+    grid-template-columns: 70px 80px 1fr;
+  }
+}
+
+/* ==========================================================================
+   Department head view
+   ========================================================================== */
+
+/* Info chip sitting below the page subheading. */
+.page__note {
+  margin-top: var(--space-2);
 }

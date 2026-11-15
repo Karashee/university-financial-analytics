@@ -144,6 +144,34 @@
           <span aria-hidden="true">&#128274;</span>
           <span>Upload a file in step 1 to unlock this step.</span>
         </p>
+
+        <div class="stack-2" id="analysis-controls" hidden>
+          <p class="section-description">
+            Runs the four analytical stages in order. Anomaly detection runs before forecasting,
+            so flagged records are excluded from forecast training.
+          </p>
+
+          <div class="field field--narrow">
+            <label class="label" for="forecast-horizon">Forecast horizon</label>
+            <select class="select" id="forecast-horizon"></select>
+          </div>
+
+          <div>
+            <button class="btn btn--primary" id="run-button" type="button">
+              <span class="spinner btn__spinner" aria-hidden="true"></span>
+              <span>Run analysis</span>
+            </button>
+          </div>
+
+          <ol class="stepper" id="stepper"></ol>
+
+          <div>
+            <button class="btn btn--secondary" id="retry-button" type="button" hidden>
+              <span class="spinner btn__spinner" aria-hidden="true"></span>
+              <span>Retry from this step</span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -153,7 +181,50 @@
         <span class="section-number" aria-hidden="true">3</span>
         <h2 class="section-heading" id="results-heading">Results</h2>
       </div>
-      <div class="section-card__body" id="results-body"></div>
+      <div class="section-card__body stack-3" id="results-body">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-tile__label">Transactions analysed</div>
+            <div class="stat-tile__value" id="result-scored">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-tile__label">Anomalies flagged</div>
+            <div class="stat-tile__value" id="result-flagged">0</div>
+            <div class="stat-tile__meta" id="result-flagged-meta"></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-tile__label">Forecasts generated</div>
+            <div class="stat-tile__value" id="result-forecasts">0</div>
+            <div class="stat-tile__meta" id="result-forecasts-meta"></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-tile__label">Pipeline time</div>
+            <div class="stat-tile__value" id="result-duration">0.0 s</div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <svg class="callout__icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 3v18h18"></path>
+            <path d="M7 15l4-5 3 3 4-6"></path>
+          </svg>
+          <span>
+            Results have been written to the database. Open the Power BI report and
+            click <strong>Refresh</strong> to view them.
+          </span>
+        </div>
+
+        <div>
+          <div class="activity-header">
+            <h3 class="section-heading">Recent system activity</h3>
+            <button class="btn-text" id="activity-refresh" type="button">Refresh</button>
+          </div>
+          <div class="activity-list" id="activity-list"></div>
+          <p class="muted" id="activity-message" hidden></p>
+        </div>
+      </div>
     </section>
   </main>
 

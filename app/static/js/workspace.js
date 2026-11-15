@@ -6,7 +6,7 @@
  * Every value that comes back from the API is written with textContent.
  */
 
-import { apiUpload, requireRole } from "./api.js";
+import { apiGet, apiPost, apiUpload, requireRole } from "./api.js";
 import { readCsvPreview, PREVIEW_ROW_COUNT } from "./csv-preview.js";
 import { renderTopBar } from "./layout.js";
 
@@ -79,10 +79,30 @@ const rejectedBody = document.querySelector("#rejected-body");
 
 const sectionAnalysis = document.querySelector("#section-analysis");
 const analysisLockedNote = document.querySelector("#analysis-locked-note");
+const analysisControls = document.querySelector("#analysis-controls");
+const forecastHorizon = document.querySelector("#forecast-horizon");
+const runButton = document.querySelector("#run-button");
+const retryButton = document.querySelector("#retry-button");
+const stepper = document.querySelector("#stepper");
+
+const sectionResults = document.querySelector("#section-results");
+const resultScored = document.querySelector("#result-scored");
+const resultFlagged = document.querySelector("#result-flagged");
+const resultFlaggedMeta = document.querySelector("#result-flagged-meta");
+const resultForecasts = document.querySelector("#result-forecasts");
+const resultForecastsMeta = document.querySelector("#result-forecasts-meta");
+const resultDuration = document.querySelector("#result-duration");
+const activityList = document.querySelector("#activity-list");
+const activityMessage = document.querySelector("#activity-message");
+const activityRefresh = document.querySelector("#activity-refresh");
 
 /** The file waiting to be uploaded, and whether its columns check out. */
 let selectedFile = null;
 let columnsComplete = false;
+
+/** Per-step {result, seconds} for the current run, and where a failure stopped. */
+let stepOutcomes = [];
+let failedStepIndex = null;
 
 /* --- Small helpers ------------------------------------------------------- */
 
@@ -119,6 +139,35 @@ function formatFileSize(bytes) {
     return kilobytes.toFixed(1) + " KB";
   }
   return (kilobytes / 1024).toFixed(1) + " MB";
+}
+
+/** Money as `Ksh 1,404,879`, per the design spec: no decimals. */
+function formatMoney(value) {
+  return "Ksh " + Math.round(Number(value)).toLocaleString("en-US");
+}
+
+/** Percentages to one decimal. */
+function formatPercent(value) {
+  return Number(value).toFixed(1) + "%";
+}
+
+/** Elapsed time, e.g. "0.8 s". */
+function formatSeconds(seconds) {
+  return seconds.toFixed(1) + " s";
+}
+
+/** A log timestamp as HH:MM:SS in the viewer's own timezone. */
+function formatClockTime(isoTimestamp) {
+  const when = new Date(isoTimestamp);
+  if (Number.isNaN(when.getTime())) {
+    return "--:--:--";
+  }
+  return when.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 }
 
 function ruleLabel(rule) {
@@ -325,6 +374,7 @@ function renderRejectedRows(rejectedRows) {
 function unlockAnalysisSection() {
   sectionAnalysis.classList.remove("section-card--locked");
   hide(analysisLockedNote);
+  show(analysisControls);
   sectionAnalysis.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -368,6 +418,233 @@ async function uploadSelectedFile() {
     showUploadError(error.message);
   } finally {
     setUploading(false);
+  }
+}
+
+/* --- Analysis pipeline --------------------------------------------------- */
+
+/**
+ * The four stages, run in this order. Anomaly detection must precede the
+ * forecast so flagged records are excluded from forecast training.
+ * Response keys come from app/services: rows_written, total_scored,
+ * flagged_count, total_forecasts, mae_context, n_months_ahead.
+ */
+const PIPELINE_STEPS = [
+  {
+    name: "Budget utilisation",
+    run: () => apiPost("/analytics/compute/budget-utilization"),
+    describe: (result) => formatCount(result.rows_written) + " rows written",
+  },
+  {
+    name: "Trend summaries",
+    run: () => apiPost("/reporting/compute/trend-summaries"),
+    describe: (result) => formatCount(result.rows_written) + " rows written",
+  },
+  {
+    name: "Anomaly detection",
+    run: () => apiPost("/anomaly/detect"),
+    describe: (result) =>
+      formatCount(result.total_scored) + " scored \u00b7 " +
+      formatCount(result.flagged_count) + " flagged",
+  },
+  {
+    name: "Expenditure forecast",
+    run: () => apiPost("/forecasts/run?n_months=" + selectedHorizon()),
+    // "training MAE": the error on the training data, not a hold-out figure.
+    describe: (result) =>
+      formatCount(result.total_forecasts) + " forecasts \u00b7 training MAE " +
+      formatMoney(result.mae_context),
+  },
+];
+
+const STEP_GLYPHS = { pending: "\u25cb", done: "\u2713", failed: "\u2717" };
+
+function selectedHorizon() {
+  return Number(forecastHorizon.value);
+}
+
+function stepRow(index) {
+  return stepper.children[index];
+}
+
+/** Paint one stepper row. A spinner replaces the glyph while running. */
+function setStepState(index, state, resultText, seconds) {
+  const row = stepRow(index);
+  row.className = "stepper__row stepper__row--" + state;
+
+  const status = row.querySelector(".stepper__status");
+  if (state === "running") {
+    const spinner = element("span", "spinner");
+    spinner.setAttribute("aria-hidden", "true");
+    status.replaceChildren(spinner);
+  } else {
+    const glyph = element("span", "stepper__glyph", STEP_GLYPHS[state] || "");
+    glyph.setAttribute("aria-hidden", "true");
+    status.replaceChildren(glyph);
+  }
+
+  row.querySelector(".stepper__result").textContent = resultText || "";
+  row.querySelector(".stepper__time").textContent =
+    seconds === undefined ? "" : formatSeconds(seconds);
+}
+
+function renderStepper() {
+  stepper.replaceChildren();
+  PIPELINE_STEPS.forEach((step) => {
+    const row = element("li", "stepper__row stepper__row--pending");
+
+    const status = element("span", "stepper__status");
+    const glyph = element("span", "stepper__glyph", STEP_GLYPHS.pending);
+    glyph.setAttribute("aria-hidden", "true");
+    status.appendChild(glyph);
+
+    row.appendChild(status);
+    row.appendChild(element("span", "stepper__name", step.name));
+    row.appendChild(element("span", "stepper__result"));
+    row.appendChild(element("span", "stepper__time"));
+    stepper.appendChild(row);
+  });
+}
+
+function setRunning(isRunning) {
+  runButton.disabled = isRunning;
+  runButton.classList.toggle("is-loading", isRunning);
+  runButton.setAttribute("aria-busy", isRunning ? "true" : "false");
+  retryButton.disabled = isRunning;
+  retryButton.classList.toggle("is-loading", isRunning);
+  forecastHorizon.disabled = isRunning;
+}
+
+/**
+ * Run the stages from startIndex onwards, stopping at the first failure.
+ * Steps before startIndex keep the results from the earlier attempt, so a
+ * retry does not repeat work that already succeeded.
+ */
+async function runPipeline(startIndex = 0) {
+  if (startIndex === 0) {
+    stepOutcomes = [];
+    renderStepper();
+    hide(sectionResults);
+  } else {
+    for (let index = startIndex; index < PIPELINE_STEPS.length; index += 1) {
+      setStepState(index, "pending", "", undefined);
+    }
+  }
+
+  failedStepIndex = null;
+  hide(retryButton);
+  setRunning(true);
+
+  for (let index = startIndex; index < PIPELINE_STEPS.length; index += 1) {
+    const step = PIPELINE_STEPS[index];
+    setStepState(index, "running", "Running\u2026", undefined);
+
+    const startedAt = performance.now();
+    try {
+      const result = await step.run();
+      const seconds = (performance.now() - startedAt) / 1000;
+      stepOutcomes[index] = { result: result, seconds: seconds };
+      setStepState(index, "done", step.describe(result), seconds);
+    } catch (error) {
+      const seconds = (performance.now() - startedAt) / 1000;
+      setStepState(index, "failed", error.message, seconds);
+      failedStepIndex = index;
+      show(retryButton);
+      setRunning(false);
+      return;
+    }
+  }
+
+  setRunning(false);
+  renderResults();
+}
+
+/* --- Results ------------------------------------------------------------- */
+
+function renderResults() {
+  const anomaly = stepOutcomes[2].result;
+  const forecast = stepOutcomes[3].result;
+
+  const totalScored = anomaly.total_scored;
+  const flagged = anomaly.flagged_count;
+  const totalForecasts = forecast.total_forecasts;
+  const months = forecast.n_months_ahead;
+
+  resultScored.textContent = formatCount(totalScored);
+
+  resultFlagged.textContent = formatCount(flagged);
+  resultFlaggedMeta.textContent =
+    totalScored > 0
+      ? formatPercent((flagged / totalScored) * 100) + " of transactions"
+      : "no transactions scored";
+
+  resultForecasts.textContent = formatCount(totalForecasts);
+  if (months > 0) {
+    const departments = totalForecasts / months;
+    resultForecastsMeta.textContent =
+      formatCount(months) + " months \u00d7 " + formatCount(departments) + " departments";
+  } else {
+    resultForecastsMeta.textContent = "";
+  }
+
+  const totalSeconds = stepOutcomes.reduce(
+    (sum, outcome) => sum + (outcome ? outcome.seconds : 0),
+    0
+  );
+  resultDuration.textContent = formatSeconds(totalSeconds);
+
+  show(sectionResults);
+  loadActivity();
+  sectionResults.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* --- Recent system activity ---------------------------------------------- */
+
+const LEVEL_PILL_CLASS = {
+  INFO: "pill pill--neutral",
+  WARNING: "pill pill--warning",
+  ERROR: "pill pill--danger",
+  CRITICAL: "pill pill--danger",
+};
+
+function activityRow(entry) {
+  const row = element("div", "activity-row");
+  row.appendChild(element("span", "activity-row__time", formatClockTime(entry.logged_at)));
+
+  const pill = element(
+    "span",
+    LEVEL_PILL_CLASS[entry.level] || "pill pill--neutral",
+    entry.level
+  );
+  row.appendChild(pill);
+
+  const message = element("span", "activity-row__message", entry.message);
+  message.title = entry.message;
+  row.appendChild(message);
+  return row;
+}
+
+/**
+ * Load the newest log entries. A failure here is reported quietly: the
+ * pipeline has already succeeded and the page must not break over it.
+ */
+async function loadActivity() {
+  hide(activityMessage);
+  try {
+    const entries = await apiGet("/logs?limit=8");
+    activityList.replaceChildren();
+
+    if (entries.length === 0) {
+      activityMessage.textContent = "No activity recorded yet.";
+      show(activityMessage);
+      return;
+    }
+
+    entries.forEach((entry) => activityList.appendChild(activityRow(entry)));
+  } catch {
+    activityList.replaceChildren();
+    activityMessage.textContent = "Recent activity is unavailable just now.";
+    show(activityMessage);
   }
 }
 
@@ -417,6 +694,16 @@ fileRemove.addEventListener("click", () => {
 
 uploadButton.addEventListener("click", uploadSelectedFile);
 
+runButton.addEventListener("click", () => runPipeline(0));
+
+retryButton.addEventListener("click", () => {
+  if (failedStepIndex !== null) {
+    runPipeline(failedStepIndex);
+  }
+});
+
+activityRefresh.addEventListener("click", loadActivity);
+
 // A file dropped outside the zone would otherwise navigate away from the app.
 ["dragover", "drop"].forEach((name) => {
   window.addEventListener(name, (event) => {
@@ -427,6 +714,22 @@ uploadButton.addEventListener("click", uploadSelectedFile);
 });
 
 /* --- Boot ---------------------------------------------------------------- */
+
+/** Forecast horizon: 1-12 months, defaulting to 3. */
+function populateHorizonOptions() {
+  const DEFAULT_MONTHS = 3;
+  for (let months = 1; months <= 12; months += 1) {
+    const option = element("option", null, String(months));
+    option.value = String(months);
+    if (months === DEFAULT_MONTHS) {
+      option.selected = true;
+    }
+    forecastHorizon.appendChild(option);
+  }
+}
+
+populateHorizonOptions();
+renderStepper();
 
 const user = await requireRole(["admin", "finance_officer"]);
 if (user) {

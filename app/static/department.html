@@ -15,21 +15,55 @@
     <p class="page__subheading">
       Read-only view. The server restricts all data on this page to your department.
     </p>
+    <p class="page__note">
+      <span class="pill pill--neutral">Upload and analysis are restricted to finance officers.</span>
+    </p>
+
+    <section class="card" aria-labelledby="flagged-heading">
+      <h2 class="section-heading" id="flagged-heading">Flagged transactions</h2>
+      <div class="section-card__body">
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Transaction ID</th>
+                <th>Category</th>
+                <th class="th--numeric">Amount (Ksh)</th>
+                <th class="th--numeric">Anomaly score</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="flagged-body"></tbody>
+          </table>
+        </div>
+        <p class="table__empty" id="flagged-empty" hidden>
+          No flagged transactions for your department.
+        </p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="forecast-heading">
+      <h2 class="section-heading" id="forecast-heading">Expenditure forecast</h2>
+      <div class="section-card__body">
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="th--numeric">Predicted expenditure (Ksh)</th>
+              </tr>
+            </thead>
+            <tbody id="forecast-body"></tbody>
+          </table>
+        </div>
+        <p class="table__empty" id="forecast-empty" hidden>
+          No forecast available yet &mdash; the finance office has not run the analysis.
+        </p>
+      </div>
+    </section>
   </main>
 
-  <!-- Placeholder page. Chunk 26 adds the flagged-transactions and forecast
-       cards and moves this bootstrap into app/static/js/department.js. -->
-  <script type="module">
-    import { requireRole } from "./js/api.js";
-    import { renderTopBar } from "./js/layout.js";
-
-    const user = await requireRole(["department_head"]);
-    if (user) {
-      renderTopBar(user);
-      if (user.department_name) {
-        document.querySelector("#department-heading").textContent = user.department_name;
-      }
-    }
-  </script>
+  <script type="module" src="js/department.js"></script>
 </body>
 </html>
