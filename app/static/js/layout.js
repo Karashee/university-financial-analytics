@@ -48,7 +48,7 @@ export function renderTopBar(user, mountSelector = "#top-bar") {
   const logo = element("span", "logo-mark", "FA");
   logo.setAttribute("aria-hidden", "true");
   brand.appendChild(logo);
-  brand.appendChild(element("span", "topbar__title", "Financial Analytics"));
+  brand.appendChild(element("span", "topbar__title", "University Financial Analytics"));
 
   const account = element("div", "topbar__user");
   account.appendChild(element("span", "topbar__username", user.username));

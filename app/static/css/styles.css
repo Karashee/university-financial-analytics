@@ -1013,3 +1013,181 @@ textarea:focus-visible,
 .page__note {
   margin-top: var(--space-2);
 }
+
+/* ==========================================================================
+   Workspace: three-stage progress indicator
+   ========================================================================== */
+
+/*
+  One unobtrusive row above the section cards. Each stage always shows a
+  number or a tick plus its label, so colour is never the only signal.
+*/
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.progress__stage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* A short rule before every stage but the first, so the row reads in order. */
+.progress__stage + .progress__stage::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 24px;
+  height: 1px;
+  margin-right: var(--space-1);
+  background: var(--border);
+}
+
+.progress__marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.progress__label {
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.progress__stage--upcoming .progress__marker,
+.progress__stage--upcoming .progress__label {
+  color: var(--muted);
+}
+
+.progress__stage--active .progress__marker {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.progress__stage--active .progress__label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.progress__stage--complete .progress__marker {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+}
+
+.progress__stage--complete .progress__label {
+  color: var(--text);
+}
+
+/* Screen-reader text; no visual treatment of its own. */
+.progress__state {
+  font: inherit;
+}
+
+@media (max-width: 768px) {
+  .progress {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-1);
+  }
+
+  .progress__stage + .progress__stage::before {
+    width: 12px;
+    margin-right: 4px;
+  }
+}
+
+/* ==========================================================================
+   Workspace: dataset summary, control notes, save confirmation
+   ========================================================================== */
+
+/* Record, column and department counts read from the selected file. */
+.dataset-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding: 10px var(--space-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.dataset-summary__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.dataset-summary__label {
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+}
+
+.dataset-summary__value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Muted guidance under a form control. */
+.field__note {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+/* Confirmation that the results reached the database. */
+.saved-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--accent-hover);
+  font-size: var(--text-label);
+  font-weight: 500;
+}
+
+.saved-note__icon {
+  font-weight: 700;
+  line-height: 1;
+}
+
+.saved-note__time {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Stepper: algorithm label under each step name ----------------------- */
+
+.stepper__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepper__detail {
+  color: var(--muted);
+  font-size: var(--text-label);
+}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Data ingestion &amp; analysis - Financial Analytics</title>
+  <title>Financial Data Management - University Financial Analytics</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -11,19 +11,51 @@
   <div id="top-bar"></div>
 
   <main class="page">
-    <h1 class="page__heading">Data ingestion &amp; analysis</h1>
+    <h1 class="page__heading">Financial Data Management</h1>
     <p class="page__subheading">
-      Upload departmental expenditure records, validate them, and run the analytical pipeline.
+      Upload, validate and analyse departmental financial records to generate expenditure
+      insights and budget forecasts.
     </p>
+
+    <!-- Three-stage progress indicator ------------------------------------- -->
+    <!--
+      Each stage reads state the application already tracks: stage 1 from the
+      ingestion response, stage 2 from all four pipeline steps returning 200.
+      Stage 3 never completes - the app cannot know the report was opened.
+      The number or tick and the label are always visible, so colour is never
+      the only signal.
+    -->
+    <ol class="progress" id="progress" aria-label="Workflow progress">
+      <li class="progress__stage progress__stage--active" id="progress-1">
+        <span class="progress__marker" aria-hidden="true">1</span>
+        <span class="progress__label">Upload &amp; Validate</span>
+        <span class="progress__state visually-hidden">in progress</span>
+      </li>
+      <li class="progress__stage progress__stage--upcoming" id="progress-2">
+        <span class="progress__marker" aria-hidden="true">2</span>
+        <span class="progress__label">Run Analysis</span>
+        <span class="progress__state visually-hidden">not started</span>
+      </li>
+      <li class="progress__stage progress__stage--upcoming" id="progress-3">
+        <span class="progress__marker" aria-hidden="true">3</span>
+        <span class="progress__label">View Insights</span>
+        <span class="progress__state visually-hidden">not started</span>
+      </li>
+    </ol>
 
     <!-- 1 Upload data ------------------------------------------------------ -->
     <section class="card section-card" id="section-upload" aria-labelledby="upload-heading">
       <div class="section-card__header">
         <span class="section-number" aria-hidden="true">1</span>
-        <h2 class="section-heading" id="upload-heading">Upload data</h2>
+        <h2 class="section-heading" id="upload-heading">Upload &amp; Validate Data</h2>
       </div>
 
       <div class="section-card__body stack-2">
+        <p class="section-description">
+          Upload departmental expenditure records in CSV format. The system will validate
+          the dataset before processing.
+        </p>
+
         <div class="dropzone" id="dropzone" role="button" tabindex="0"
              aria-label="Choose a CSV file to upload, or drag one here">
           <svg class="dropzone__icon" width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -56,6 +88,22 @@
           <span class="file-chip__name" id="file-chip-name"></span>
           <span class="file-chip__size" id="file-chip-size"></span>
           <button class="btn-text file-chip__remove" id="file-remove" type="button">Remove</button>
+        </div>
+
+        <!-- Dataset summary: every figure is counted from the file itself. -->
+        <div class="dataset-summary" id="dataset-summary" hidden>
+          <div class="dataset-summary__item">
+            <span class="dataset-summary__label">Records</span>
+            <span class="dataset-summary__value" id="dataset-records">0</span>
+          </div>
+          <div class="dataset-summary__item">
+            <span class="dataset-summary__label">Columns</span>
+            <span class="dataset-summary__value" id="dataset-columns">0</span>
+          </div>
+          <div class="dataset-summary__item" id="dataset-departments-item">
+            <span class="dataset-summary__label">Departments</span>
+            <span class="dataset-summary__value" id="dataset-departments">0</span>
+          </div>
         </div>
 
         <div id="preview-block" hidden>
@@ -136,13 +184,13 @@
              aria-labelledby="analysis-heading">
       <div class="section-card__header">
         <span class="section-number" aria-hidden="true">2</span>
-        <h2 class="section-heading" id="analysis-heading">Run analysis</h2>
+        <h2 class="section-heading" id="analysis-heading">Run Financial Analysis</h2>
       </div>
 
       <div class="section-card__body">
         <p class="section-locked-note" id="analysis-locked-note">
           <span aria-hidden="true">&#128274;</span>
-          <span>Upload a file in step 1 to unlock this step.</span>
+          <span>Complete data validation to unlock financial analysis.</span>
         </p>
 
         <div class="stack-2" id="analysis-controls" hidden>
@@ -151,9 +199,16 @@
             so flagged records are excluded from forecast training.
           </p>
 
-          <div class="field field--narrow">
-            <label class="label" for="forecast-horizon">Forecast horizon</label>
-            <select class="select" id="forecast-horizon"></select>
+          <div>
+            <div class="field field--narrow">
+              <label class="label" for="forecast-horizon">Forecast horizon (months)</label>
+              <select class="select" id="forecast-horizon"
+                      aria-describedby="forecast-horizon-note"></select>
+            </div>
+            <p class="field__note" id="forecast-horizon-note">
+              Linear Regression is validated for near-term projection; longer horizons
+              compound error.
+            </p>
           </div>
 
           <div>
@@ -179,9 +234,14 @@
     <section class="card section-card" id="section-results" aria-labelledby="results-heading" hidden>
       <div class="section-card__header">
         <span class="section-number" aria-hidden="true">3</span>
-        <h2 class="section-heading" id="results-heading">Results</h2>
+        <h2 class="section-heading" id="results-heading">Financial Analysis Complete</h2>
       </div>
       <div class="section-card__body stack-3" id="results-body">
+        <p class="section-description">
+          Your departmental financial records have been processed and the analytical
+          results saved.
+        </p>
+
         <div class="stat-grid">
           <div class="stat-tile">
             <div class="stat-tile__label">Transactions analysed</div>
@@ -202,6 +262,13 @@
             <div class="stat-tile__value" id="result-duration">0.0 s</div>
           </div>
         </div>
+
+        <!-- Shown only once all four pipeline steps have returned 200. -->
+        <p class="saved-note" id="saved-note" hidden>
+          <span class="saved-note__icon" aria-hidden="true">&#10003;</span>
+          <span>Analytical results saved to PostgreSQL</span>
+          <span class="saved-note__time" id="saved-note-time"></span>
+        </p>
 
         <div class="callout">
           <svg class="callout__icon" width="20" height="20" viewBox="0 0 24 24" fill="none"

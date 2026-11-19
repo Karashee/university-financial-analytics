@@ -1,13 +1,12 @@
 /**
- * Workspace, step 1: choose a CSV, preview it, check its columns, and send
- * it to the ingestion endpoint.
+ * Workspace: choose a CSV, summarise and preview it, check its columns, send
+ * it to the ingestion endpoint, then run the four analytical stages.
  *
- * Steps 2 and 3 (run analysis, results) are filled in by the next chunk.
  * Every value that comes back from the API is written with textContent.
  */
 
 import { apiGet, apiPost, apiUpload, requireRole } from "./api.js";
-import { readCsvPreview, PREVIEW_ROW_COUNT } from "./csv-preview.js";
+import { readCsvDataset, PREVIEW_ROW_COUNT } from "./csv-preview.js";
 import { renderTopBar } from "./layout.js";
 
 /**
@@ -55,6 +54,12 @@ const fileChipName = document.querySelector("#file-chip-name");
 const fileChipSize = document.querySelector("#file-chip-size");
 const fileRemove = document.querySelector("#file-remove");
 
+const datasetSummary = document.querySelector("#dataset-summary");
+const datasetRecords = document.querySelector("#dataset-records");
+const datasetColumns = document.querySelector("#dataset-columns");
+const datasetDepartments = document.querySelector("#dataset-departments");
+const datasetDepartmentsItem = document.querySelector("#dataset-departments-item");
+
 const previewBlock = document.querySelector("#preview-block");
 const previewHead = document.querySelector("#preview-head");
 const previewBody = document.querySelector("#preview-body");
@@ -85,7 +90,15 @@ const runButton = document.querySelector("#run-button");
 const retryButton = document.querySelector("#retry-button");
 const stepper = document.querySelector("#stepper");
 
+const progressStages = [
+  document.querySelector("#progress-1"),
+  document.querySelector("#progress-2"),
+  document.querySelector("#progress-3"),
+];
+
 const sectionResults = document.querySelector("#section-results");
+const savedNote = document.querySelector("#saved-note");
+const savedNoteTime = document.querySelector("#saved-note-time");
 const resultScored = document.querySelector("#result-scored");
 const resultFlagged = document.querySelector("#result-flagged");
 const resultFlaggedMeta = document.querySelector("#result-flagged-meta");
@@ -103,6 +116,20 @@ let columnsComplete = false;
 /** Per-step {result, seconds} for the current run, and where a failure stopped. */
 let stepOutcomes = [];
 let failedStepIndex = null;
+
+/**
+ * What the application knows about progress.
+ *
+ * uploadSucceeded is set by the same ingestion response that unlocks section 2;
+ * analysisSucceeded by all four pipeline steps returning 200, the same
+ * condition that reveals section 3. Neither is ever set from a button click,
+ * so a failed upload or a failed step cannot mark a stage complete.
+ */
+let uploadSucceeded = false;
+let analysisSucceeded = false;
+
+/** When the final pipeline step returned, read from the browser clock. */
+let completedAt = null;
 
 /* --- Small helpers ------------------------------------------------------- */
 
@@ -156,6 +183,44 @@ function formatSeconds(seconds) {
   return seconds.toFixed(1) + " s";
 }
 
+/* --- Three-stage progress indicator -------------------------------------- */
+
+const PROGRESS_STATE_TEXT = {
+  upcoming: "not started",
+  active: "in progress",
+  complete: "complete",
+};
+
+/**
+ * Paint the indicator from uploadSucceeded and analysisSucceeded.
+ *
+ * Stage 3 only ever becomes active: the application cannot confirm that the
+ * Power BI report was opened, so it never shows a completed tick.
+ */
+function refreshProgress() {
+  let states;
+  if (analysisSucceeded) {
+    states = ["complete", "complete", "active"];
+  } else if (uploadSucceeded) {
+    states = ["complete", "active", "upcoming"];
+  } else {
+    states = ["active", "upcoming", "upcoming"];
+  }
+
+  states.forEach((state, index) => {
+    const stage = progressStages[index];
+    if (!stage) {
+      return;
+    }
+    stage.className = "progress__stage progress__stage--" + state;
+    // The marker keeps a number unless the stage is complete, so the stage is
+    // still identifiable without relying on colour.
+    stage.querySelector(".progress__marker").textContent =
+      state === "complete" ? "✓" : String(index + 1);
+    stage.querySelector(".progress__state").textContent = PROGRESS_STATE_TEXT[state];
+  });
+}
+
 /** A log timestamp as HH:MM:SS in the viewer's own timezone. */
 function formatClockTime(isoTimestamp) {
   const when = new Date(isoTimestamp);
@@ -168,6 +233,16 @@ function formatClockTime(isoTimestamp) {
     second: "2-digit",
     hour12: false,
   });
+}
+
+/** Completion stamp, e.g. "16 Nov 2026 at 14:32:05", in the viewer's timezone. */
+function formatCompletedAt(when) {
+  const date = when.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return date + " at " + formatClockTime(when.toISOString());
 }
 
 function ruleLabel(rule) {
@@ -205,6 +280,27 @@ function refreshUploadButton() {
 }
 
 /* --- Preview and column check ------------------------------------------- */
+
+/**
+ * Show the record, column and department counts read from the file.
+ *
+ * Nothing is assumed about the dataset: all three figures are counted by the
+ * reader. The department count is omitted when the file has no
+ * Department_ID column, rather than shown as zero.
+ */
+function renderDatasetSummary(dataset) {
+  datasetRecords.textContent = formatCount(dataset.rowCount);
+  datasetColumns.textContent = formatCount(dataset.columns.length);
+
+  if (dataset.distinctCount === null) {
+    hide(datasetDepartmentsItem);
+  } else {
+    datasetDepartments.textContent = formatCount(dataset.distinctCount);
+    show(datasetDepartmentsItem);
+  }
+
+  show(datasetSummary);
+}
 
 function renderPreview(columns, rows) {
   previewHead.replaceChildren();
@@ -286,6 +382,7 @@ function clearSelection() {
   fileInput.value = "";
 
   hide(fileChip);
+  hide(datasetSummary);
   hide(previewBlock);
   hide(columnsBlock);
   hide(columnsWarning);
@@ -320,14 +417,20 @@ async function selectFile(file) {
   show(fileChip);
 
   try {
-    const preview = await readCsvPreview(selectedFile, PREVIEW_ROW_COUNT);
-    if (preview.columns.length === 0) {
+    // One pass over the whole file: the header, the first rows for the
+    // preview, the record count and the distinct departments.
+    const dataset = await readCsvDataset(selectedFile, {
+      previewRows: PREVIEW_ROW_COUNT,
+      distinctColumn: "Department_ID",
+    });
+    if (dataset.columns.length === 0) {
       clearSelection();
       showFileError("That file appears to be empty.");
       return;
     }
-    renderPreview(preview.columns, preview.rows);
-    renderColumnCheck(preview.columns);
+    renderDatasetSummary(dataset);
+    renderPreview(dataset.columns, dataset.rows);
+    renderColumnCheck(dataset.columns);
   } catch {
     clearSelection();
     showFileError("That file could not be read. Check that it is a plain CSV file.");
@@ -398,6 +501,10 @@ function renderUploadResult(result) {
   show(uploadResult);
 
   if (inserted > 0 || skipped > 0) {
+    // The same condition unlocks section 2 and completes stage 1. A
+    // rejected-only upload reaches neither.
+    uploadSucceeded = true;
+    refreshProgress();
     unlockAnalysisSection();
   }
 }
@@ -432,16 +539,19 @@ async function uploadSelectedFile() {
 const PIPELINE_STEPS = [
   {
     name: "Budget utilisation",
+    detail: "Departmental spending against allocated budget",
     run: () => apiPost("/analytics/compute/budget-utilization"),
     describe: (result) => formatCount(result.rows_written) + " rows written",
   },
   {
     name: "Trend summaries",
+    detail: "Expenditure patterns across fiscal periods",
     run: () => apiPost("/reporting/compute/trend-summaries"),
     describe: (result) => formatCount(result.rows_written) + " rows written",
   },
   {
     name: "Anomaly detection",
+    detail: "Isolation Forest \u00b7 unusual expenditure patterns",
     run: () => apiPost("/anomaly/detect"),
     describe: (result) =>
       formatCount(result.total_scored) + " scored \u00b7 " +
@@ -449,6 +559,7 @@ const PIPELINE_STEPS = [
   },
   {
     name: "Expenditure forecast",
+    detail: "Linear Regression \u00b7 projected departmental spend",
     run: () => apiPost("/forecasts/run?n_months=" + selectedHorizon()),
     // "training MAE": the error on the training data, not a hold-out figure.
     describe: (result) =>
@@ -498,8 +609,13 @@ function renderStepper() {
     glyph.setAttribute("aria-hidden", "true");
     status.appendChild(glyph);
 
+    // Name plus the algorithm behind it, on two lines in one grid cell.
+    const label = element("span", "stepper__label");
+    label.appendChild(element("span", "stepper__name", step.name));
+    label.appendChild(element("span", "stepper__detail", step.detail));
+
     row.appendChild(status);
-    row.appendChild(element("span", "stepper__name", step.name));
+    row.appendChild(label);
     row.appendChild(element("span", "stepper__result"));
     row.appendChild(element("span", "stepper__time"));
     stepper.appendChild(row);
@@ -533,6 +649,13 @@ async function runPipeline(startIndex = 0) {
 
   failedStepIndex = null;
   hide(retryButton);
+
+  // A run in progress means stage 2 is no longer complete, whatever an
+  // earlier run achieved.
+  analysisSucceeded = false;
+  completedAt = null;
+  refreshProgress();
+
   setRunning(true);
 
   for (let index = startIndex; index < PIPELINE_STEPS.length; index += 1) {
@@ -554,6 +677,11 @@ async function runPipeline(startIndex = 0) {
       return;
     }
   }
+
+  // Reached only when every step returned 200.
+  completedAt = new Date();
+  analysisSucceeded = true;
+  refreshProgress();
 
   setRunning(false);
   renderResults();
@@ -592,6 +720,14 @@ function renderResults() {
     0
   );
   resultDuration.textContent = formatSeconds(totalSeconds);
+
+  // Only reachable once all four steps returned 200.
+  if (completedAt !== null) {
+    savedNoteTime.textContent = formatCompletedAt(completedAt);
+    show(savedNote);
+  } else {
+    hide(savedNote);
+  }
 
   show(sectionResults);
   loadActivity();
@@ -715,11 +851,18 @@ activityRefresh.addEventListener("click", loadActivity);
 
 /* --- Boot ---------------------------------------------------------------- */
 
-/** Forecast horizon: 1-12 months, defaulting to 3. */
+/**
+ * Forecast horizon, in months, defaulting to 3.
+ *
+ * The endpoint accepts 1-12; the interface offers 1-6. This is a
+ * presentation limit only - the API's own validation is unchanged.
+ */
 function populateHorizonOptions() {
+  const MAX_MONTHS = 6;
   const DEFAULT_MONTHS = 3;
-  for (let months = 1; months <= 12; months += 1) {
-    const option = element("option", null, String(months));
+  for (let months = 1; months <= MAX_MONTHS; months += 1) {
+    const unit = months === 1 ? " month" : " months";
+    const option = element("option", null, months + unit);
     option.value = String(months);
     if (months === DEFAULT_MONTHS) {
       option.selected = true;
@@ -730,6 +873,7 @@ function populateHorizonOptions() {
 
 populateHorizonOptions();
 renderStepper();
+refreshProgress();
 
 const user = await requireRole(["admin", "finance_officer"]);
 if (user) {
