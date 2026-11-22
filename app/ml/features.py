@@ -101,6 +101,15 @@ def build_linear_regression_features(
     department_mean = monthly.groupby("department_id")["monthly_expenditure"].transform("mean")
     monthly["lag_1_expenditure"] = lag.fillna(department_mean)
 
+    # The lag above requires department-major ordering. Once it is computed,
+    # re-sort chronologically so that a shuffle=False split holds out the most
+    # recent months across all departments, rather than the last departments in
+    # alphabetical order. Without this, the hold-out contains only DEPT06 and
+    # DEPT07, and DEPT07 never appears in training at all.
+    monthly = monthly.sort_values(
+        ["fiscal_year", "fiscal_month", "department_id"]
+    ).reset_index(drop=True)
+
     dept_dummies = pd.get_dummies(monthly["department_id"], prefix="dept", drop_first=False)
     monthly = pd.concat([monthly, dept_dummies], axis=1)
 
