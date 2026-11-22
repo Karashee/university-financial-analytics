@@ -18,8 +18,9 @@ def run_anomaly_detection(db: Session) -> dict:
     """
     connection = db.connection()
     df = pd.read_sql(
-        "SELECT transaction_id, transaction_amount, budget_utilization_percentage, "
-        "expenditure_variance, historical_average_expenditure, expenditure_growth_rate, "
+        "SELECT transaction_id, department_id, expenditure_category, transaction_amount, "
+        "budget_utilization_percentage, expenditure_variance, "
+        "historical_average_expenditure, expenditure_growth_rate, "
         "vendor_category FROM expenditure_transactions",
         connection,
     )

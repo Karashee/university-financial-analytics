@@ -17,12 +17,25 @@ EXPECTED_COLUMNS = [
     "expenditure_growth_rate",
     "is_unregistered_vendor",
     "vendor_risk_score",
+    "dept_category_frequency",
+    "dept_vendor_frequency",
+    "amount_z_within_dept",
+    "amount_z_within_dept_category",
+    "amount_over_dept_mean",
+    "nearest_relative_gap",
 ]
-
 
 def make_transactions_df() -> pd.DataFrame:
     return pd.DataFrame(
         {
+            "department_id": ["DEPT01", "DEPT01", "DEPT02", "DEPT02", "DEPT01"],
+            "expenditure_category": [
+                "Office Supplies",
+                "Office Supplies",
+                "ICT Equipment",
+                "ICT Equipment",
+                "Office Supplies",
+            ],
             "transaction_amount": [1000.0, 2000.0, 3000.0, 4000.0, None],
             "budget_utilization_percentage": [10.0, 20.0, 30.0, 40.0, 50.0],
             "expenditure_variance": [1.0, 2.0, 3.0, 4.0, 5.0],
@@ -41,7 +54,7 @@ def make_transactions_df() -> pd.DataFrame:
     )
 
 
-def test_output_has_exactly_7_columns_in_order():
+def test_output_has_exactly_13_columns_in_order():
     df = make_transactions_df()
     result = build_isolation_forest_features(df)
     assert list(result.columns) == EXPECTED_COLUMNS
