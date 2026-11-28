@@ -28,6 +28,8 @@ and how many were rejected by the validation rules. A successful ingest unlocks 
 
 ![Upload results showing 2,103 inserted, 0 already in system and 0 rejected, above an unlocked Run Financial Analysis step listing the four pipeline stages](screenshots/04-validation-results.png)
 
+![In a case where we have rejected rows, the exact rule violated and the row would be displayed](screenshots/rejectedrows.png)
+
 **5. Analysis complete** — The four stages run in order and the run is summarised: transactions
 analysed, anomalies flagged, forecasts generated and elapsed time, with the audit log of every
 action the pipeline performed.
