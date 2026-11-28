@@ -1,5 +1,75 @@
 # Financial Analytics System
 
+## Walkthrough
+
+The screens below trace a single CSV upload from sign-in, through validation and the analysis
+pipeline, to the refreshed Power BI dashboard.
+
+### Web application
+
+**1. Sign in** — Finance officers, administrators and department heads authenticate here; the role
+attached to the account decides which page they land on and which departments' data they can see.
+
+![Sign-in card for University Financial Analytics with username and password fields and a Sign in button](screenshots/01-sign-in.png)
+
+**2. Data management workspace** — The finance officer's landing page, showing the three-stage
+workflow and a drop zone that accepts a departmental expenditure CSV of up to 20 MB.
+
+![Financial Data Management page with a three-stage progress bar and a CSV drop zone, with the Run Financial Analysis step locked](screenshots/02-workspace.png)
+
+**3. File preview and column check** — The selected file is read in the browser to report its record,
+column and department counts, preview the first five rows, and confirm all 18 required columns are
+present before anything is sent to the server.
+
+![Selected CSV showing 2,103 records, 18 columns and 7 departments, a five-row preview table, and a column check listing all 18 required columns as present](screenshots/03-file-preview.png)
+
+**4. Validation results** — The server reports how many rows were inserted, how many already existed
+and how many were rejected by the validation rules. A successful ingest unlocks the analysis step.
+
+![Upload results showing 2,103 inserted, 0 already in system and 0 rejected, above an unlocked Run Financial Analysis step listing the four pipeline stages](screenshots/04-validation-results.png)
+
+**5. Analysis complete** — The four stages run in order and the run is summarised: transactions
+analysed, anomalies flagged, forecasts generated and elapsed time, with the audit log of every
+action the pipeline performed.
+
+![Financial Analysis Complete panel showing 2,103 transactions analysed, 106 anomalies flagged, 21 forecasts generated and a 4.7 second pipeline time, with a recent system activity log](screenshots/05-analysis-complete.png)
+
+### Power BI dashboard
+
+Power BI reads the finished results straight from the PostgreSQL views, so refreshing the report
+after a run shows the new figures without the API being involved.
+
+<details>
+<summary><b>Five dashboard pages</b> (click to expand)</summary>
+
+**Executive Summary** — Headline budget, expenditure, utilisation and model-accuracy figures, with
+spend over time and a per-department comparison of expenditure against budget.
+
+![Executive Summary page with cards for total budget, total expenditure, anomalies flagged, overall utilisation and F1 score, above a monthly expenditure trend line and department bar charts](screenshots/06-executive-summary.png)
+
+**Budget Overview** — Monthly utilisation per department as a colour-graded matrix that highlights
+where spending has exceeded its allocation, alongside spend by category and year-to-date expenditure
+tracked against budget.
+
+![Budget Overview page with a department-by-month utilisation percentage matrix shaded red where over budget, a spend-by-category bar chart, and a year-to-date expenditure versus budget chart](screenshots/07-budget-overview.png)
+
+**Expenditure Trends** — How each department's monthly spend moves over the full period, with the
+average growth rate and a breakdown of where the money goes by vendor type.
+
+![Expenditure Trends page with a multi-department monthly spend line chart, an average growth rate chart, and a bar chart of total spend by vendor category](screenshots/08-expenditure-trends.png)
+
+**Anomaly Detection** — How the Isolation Forest performed against the labelled anomalies, broken
+down by anomaly type, with every flagged transaction listed and its score.
+
+![Anomaly Detection page showing precision, recall and F1 score cards, recall by anomaly type, and a table of flagged transactions with explanations, amounts and anomaly scores](screenshots/09-anomaly-detection.png)
+
+**Forecasting** — The Linear Regression projection continuing on from actual expenditure, the
+forecast split by department, and the training error for the model behind it.
+
+![Forecasting page with actual expenditure and a dashed forecast continuation, a three-month forecast by department bar chart, and a training MAE of 199.51K](screenshots/10-forecasting.png)
+
+</details>
+
 ## 1. Project Overview
 
 The Financial Analytics System is a budget monitoring, expenditure analytics, anomaly detection,
@@ -15,19 +85,19 @@ forecast data directly to Power BI, so reporting never depends on the API being 
 
 ## 2. Tech Stack
 
-| Component            | Technology                          |
-| --------------------- | ------------------------------------ |
-| Language               | Python 3.14                          |
-| Web framework          | FastAPI                              |
-| Database               | PostgreSQL                           |
-| ORM / migrations       | SQLAlchemy 2.x (synchronous), Alembic |
-| Config                 | pydantic-settings                    |
-| Auth                   | python-jose (JWT), passlib (bcrypt)  |
-| Data processing         | pandas                               |
-| Machine learning        | scikit-learn, joblib                 |
-| Testing                | pytest, httpx (TestClient)           |
-| ASGI server             | uvicorn                              |
-| BI / reporting          | Power BI (via PostgreSQL views)      |
+| Component        | Technology                            |
+| ---------------- | ------------------------------------- |
+| Language         | Python 3.14                           |
+| Web framework    | FastAPI                               |
+| Database         | PostgreSQL                            |
+| ORM / migrations | SQLAlchemy 2.x (synchronous), Alembic |
+| Config           | pydantic-settings                     |
+| Auth             | python-jose (JWT), passlib (bcrypt)   |
+| Data processing  | pandas                                |
+| Machine learning | scikit-learn, joblib                  |
+| Testing          | pytest, httpx (TestClient)            |
+| ASGI server      | uvicorn                               |
+| BI / reporting   | Power BI (via PostgreSQL views)       |
 
 ## 3. Prerequisites
 
@@ -111,26 +181,26 @@ populated `anomaly_results` and there is expenditure data to hold out for the LR
 
 The source CSV has 18 columns:
 
-| Column                            | Type            | Description                                                              |
-| ---------------------------------- | ---------------- | -------------------------------------------------------------------------- |
-| `Transaction_ID`                    | string           | Unique transaction identifier                                              |
-| `Department_ID`                     | string           | Department code                                                            |
-| `Department_Name`                   | string           | Human-readable department name                                             |
-| `Department_Type`                   | string           | Department category (e.g. Administrative, Academic)                        |
-| `Fiscal_Year`                       | integer          | Fiscal year of the transaction                                             |
-| `Fiscal_Month`                      | integer          | Fiscal month, 1-12                                                         |
-| `Transaction_Date`                  | date             | Date the transaction occurred                                              |
-| `Budget_Allocation`                 | decimal          | Department's total budget for the fiscal year (stored in `budgets`, not `expenditure_transactions`) |
-| `Monthly_Expenditure`               | decimal          | Department's total expenditure for that fiscal month                       |
-| `Transaction_Amount`                | decimal          | Amount of this individual transaction                                      |
-| `Expenditure_Category`              | string           | Spending category (e.g. Administrative Operations)                         |
-| `Vendor_Category`                   | string           | Vendor classification (e.g. General Supplier, Unregistered Vendor)         |
-| `Budget_Utilization_Percentage`     | decimal          | Percent of budget utilized at the time of the transaction (0-100)          |
-| `Expenditure_Variance`              | decimal          | Deviation from the historical average expenditure                          |
-| `Historical_Average_Expenditure`    | decimal          | Department's historical average monthly expenditure                        |
-| `Expenditure_Growth_Rate`           | decimal          | Month-over-month expenditure growth rate                                   |
-| `Is_Anomaly`                        | integer (0 or 1) | Ground-truth anomaly flag; maps to `is_anomaly_ground_truth`               |
-| `Anomaly_Type`                      | string           | Ground-truth anomaly category; maps to `anomaly_type_ground_truth`, `"Normal"` if not anomalous |
+| Column                           | Type             | Description                                                                                         |
+| -------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| `Transaction_ID`                 | string           | Unique transaction identifier                                                                       |
+| `Department_ID`                  | string           | Department code                                                                                     |
+| `Department_Name`                | string           | Human-readable department name                                                                      |
+| `Department_Type`                | string           | Department category (e.g. Administrative, Academic)                                                 |
+| `Fiscal_Year`                    | integer          | Fiscal year of the transaction                                                                      |
+| `Fiscal_Month`                   | integer          | Fiscal month, 1-12                                                                                  |
+| `Transaction_Date`               | date             | Date the transaction occurred                                                                       |
+| `Budget_Allocation`              | decimal          | Department's total budget for the fiscal year (stored in `budgets`, not `expenditure_transactions`) |
+| `Monthly_Expenditure`            | decimal          | Department's total expenditure for that fiscal month                                                |
+| `Transaction_Amount`             | decimal          | Amount of this individual transaction                                                               |
+| `Expenditure_Category`           | string           | Spending category (e.g. Administrative Operations)                                                  |
+| `Vendor_Category`                | string           | Vendor classification (e.g. General Supplier, Unregistered Vendor)                                  |
+| `Budget_Utilization_Percentage`  | decimal          | Percent of budget utilized at the time of the transaction (0-100)                                   |
+| `Expenditure_Variance`           | decimal          | Deviation from the historical average expenditure                                                   |
+| `Historical_Average_Expenditure` | decimal          | Department's historical average monthly expenditure                                                 |
+| `Expenditure_Growth_Rate`        | decimal          | Month-over-month expenditure growth rate                                                            |
+| `Is_Anomaly`                     | integer (0 or 1) | Ground-truth anomaly flag; maps to `is_anomaly_ground_truth`                                        |
+| `Anomaly_Type`                   | string           | Ground-truth anomaly category; maps to `anomaly_type_ground_truth`, `"Normal"` if not anomalous     |
 
 ## 11. API Endpoints
 
@@ -138,34 +208,34 @@ All endpoints except `/`, `/health`, and `/auth/token` require a `Bearer` JWT ac
 `any_authenticated` means any of `admin`, `finance_officer`, or `department_head`; `department_head`
 users are additionally scoped to their own department's data on every GET listed below.
 
-| Method | Path                                     | Role Required      | Description                                    |
-| ------ | ------------------------------------------ | -------------------- | ------------------------------------------------ |
-| GET    | `/`                                          | none                  | API info                                          |
-| GET    | `/health`                                    | none                  | Database connectivity check                       |
-| POST   | `/auth/token`                                | none                  | Login, obtain a JWT access token                  |
-| GET    | `/auth/me`                                   | any_authenticated     | Signed-in user identity, role and department      |
-| POST   | `/users`                                     | admin                 | Create a user                                     |
-| GET    | `/users`                                     | admin                 | List users                                        |
-| POST   | `/ingest/csv`                                | finance_officer/admin | Bulk ingest a CSV of expenditure transactions     |
-| POST   | `/departments`                               | admin                 | Create a department                               |
-| POST   | `/departments/{department_id}/budgets`       | finance_officer/admin | Create a budget for a department/fiscal year      |
-| GET    | `/departments`                               | any_authenticated     | List departments                                  |
-| GET    | `/departments/{department_id}`               | any_authenticated     | Get a single department                           |
-| GET    | `/budgets`                                   | any_authenticated     | List budgets                                      |
-| POST   | `/transactions`                              | finance_officer/admin | Create a transaction (manual entry)               |
-| GET    | `/transactions`                              | any_authenticated     | List transactions, with filters                   |
-| GET    | `/transactions/{transaction_id}`             | any_authenticated     | Get a single transaction                          |
-| POST   | `/analytics/compute/budget-utilization`      | finance_officer/admin | Recompute the budget utilization report           |
-| GET    | `/analytics/budget-utilization`              | any_authenticated     | List budget utilization report rows               |
-| GET    | `/analytics/variance-report`                 | any_authenticated     | Expenditure variance statistics                   |
-| GET    | `/analytics/growth-rate`                     | any_authenticated     | Average expenditure growth rate                   |
-| POST   | `/reporting/compute/trend-summaries`         | finance_officer/admin | Recompute annual trend summaries                  |
-| GET    | `/reporting/trend-summaries`                 | any_authenticated     | List trend summaries                              |
-| POST   | `/anomaly/detect`                            | finance_officer/admin | Retrain the Isolation Forest and rescore all rows |
-| GET    | `/anomaly/results`                           | any_authenticated     | List anomaly detection results                    |
-| POST   | `/forecasts/run`                             | finance_officer/admin | Retrain the Linear Regression model and forecast  |
-| GET    | `/forecasts`                                 | any_authenticated     | List forecast results                             |
-| GET    | `/logs`                                      | finance_officer/admin | List audit log entries, newest first              |
+| Method | Path                                    | Role Required         | Description                                       |
+| ------ | --------------------------------------- | --------------------- | ------------------------------------------------- |
+| GET    | `/`                                     | none                  | API info                                          |
+| GET    | `/health`                               | none                  | Database connectivity check                       |
+| POST   | `/auth/token`                           | none                  | Login, obtain a JWT access token                  |
+| GET    | `/auth/me`                              | any_authenticated     | Signed-in user identity, role and department      |
+| POST   | `/users`                                | admin                 | Create a user                                     |
+| GET    | `/users`                                | admin                 | List users                                        |
+| POST   | `/ingest/csv`                           | finance_officer/admin | Bulk ingest a CSV of expenditure transactions     |
+| POST   | `/departments`                          | admin                 | Create a department                               |
+| POST   | `/departments/{department_id}/budgets`  | finance_officer/admin | Create a budget for a department/fiscal year      |
+| GET    | `/departments`                          | any_authenticated     | List departments                                  |
+| GET    | `/departments/{department_id}`          | any_authenticated     | Get a single department                           |
+| GET    | `/budgets`                              | any_authenticated     | List budgets                                      |
+| POST   | `/transactions`                         | finance_officer/admin | Create a transaction (manual entry)               |
+| GET    | `/transactions`                         | any_authenticated     | List transactions, with filters                   |
+| GET    | `/transactions/{transaction_id}`        | any_authenticated     | Get a single transaction                          |
+| POST   | `/analytics/compute/budget-utilization` | finance_officer/admin | Recompute the budget utilization report           |
+| GET    | `/analytics/budget-utilization`         | any_authenticated     | List budget utilization report rows               |
+| GET    | `/analytics/variance-report`            | any_authenticated     | Expenditure variance statistics                   |
+| GET    | `/analytics/growth-rate`                | any_authenticated     | Average expenditure growth rate                   |
+| POST   | `/reporting/compute/trend-summaries`    | finance_officer/admin | Recompute annual trend summaries                  |
+| GET    | `/reporting/trend-summaries`            | any_authenticated     | List trend summaries                              |
+| POST   | `/anomaly/detect`                       | finance_officer/admin | Retrain the Isolation Forest and rescore all rows |
+| GET    | `/anomaly/results`                      | any_authenticated     | List anomaly detection results                    |
+| POST   | `/forecasts/run`                        | finance_officer/admin | Retrain the Linear Regression model and forecast  |
+| GET    | `/forecasts`                            | any_authenticated     | List forecast results                             |
+| GET    | `/logs`                                 | finance_officer/admin | List audit log entries, newest first              |
 
 ## 12. Power BI Connection Guide
 
@@ -179,16 +249,16 @@ source CSV. In Power BI Desktop: **Get Data → PostgreSQL database**, then supp
 
 All 8 views below are created via Alembic migrations and are safe to connect to directly:
 
-| View                          | Migration | Purpose                                                          |
-| ------------------------------ | --------- | ------------------------------------------------------------------ |
-| `vw_budget_utilization`        | 0002      | Pre-computed utilization by department/month/category              |
-| `vw_expenditure_trends`        | 0002      | Expenditure totals and growth by department and month              |
-| `vw_vendor_category_summary`   | 0002      | Spending and anomaly flags by vendor type                          |
-| `vw_ytd_budget_utilization`    | 0002      | Cumulative year-to-date expenditure vs. budget per department (window function) |
-| `vw_anomaly_flagged`           | 0003      | All Isolation-Forest-flagged transactions with full context        |
-| `vw_anomaly_comparison`        | 0003      | Ground-truth anomaly labels vs. model predictions                  |
-| `vw_forecast_vs_actuals`       | 0004      | Linear Regression forecasts compared to trend summary actuals      |
-| `vw_system_activity`           | 0005      | Application audit trail of pipeline actions and errors             |
+| View                         | Migration | Purpose                                                                         |
+| ---------------------------- | --------- | ------------------------------------------------------------------------------- |
+| `vw_budget_utilization`      | 0002      | Pre-computed utilization by department/month/category                           |
+| `vw_expenditure_trends`      | 0002      | Expenditure totals and growth by department and month                           |
+| `vw_vendor_category_summary` | 0002      | Spending and anomaly flags by vendor type                                       |
+| `vw_ytd_budget_utilization`  | 0002      | Cumulative year-to-date expenditure vs. budget per department (window function) |
+| `vw_anomaly_flagged`         | 0003      | All Isolation-Forest-flagged transactions with full context                     |
+| `vw_anomaly_comparison`      | 0003      | Ground-truth anomaly labels vs. model predictions                               |
+| `vw_forecast_vs_actuals`     | 0004      | Linear Regression forecasts compared to trend summary actuals                   |
+| `vw_system_activity`         | 0005      | Application audit trail of pipeline actions and errors                          |
 
 ## 13. Web Interface
 
@@ -207,11 +277,11 @@ Then open [http://localhost:8000/ui/](http://localhost:8000/ui/).
 
 Seeded by `scripts/seed_data.py` (see section 6). **Local development only.**
 
-| Username   | Password       | Role               | Lands on        | Can do                                                                 |
-| ---------- | -------------- | ------------------ | --------------- | ---------------------------------------------------------------------- |
-| `finance`  | `Finance@123`  | `finance_officer`  | Workspace       | Upload a CSV, run the full analysis pipeline, see results and activity |
-| `admin`    | `Admin@123`    | `admin`            | Workspace       | The same as the finance officer, plus user and department management via the API |
-| `depthead` | `DeptHead@123` | `department_head`  | Department view | Read-only: flagged transactions and the forecast for their own department only |
+| Username   | Password       | Role              | Lands on        | Can do                                                                           |
+| ---------- | -------------- | ----------------- | --------------- | -------------------------------------------------------------------------------- |
+| `finance`  | `Finance@123`  | `finance_officer` | Workspace       | Upload a CSV, run the full analysis pipeline, see results and activity           |
+| `admin`    | `Admin@123`    | `admin`           | Workspace       | The same as the finance officer, plus user and department management via the API |
+| `depthead` | `DeptHead@123` | `department_head` | Department view | Read-only: flagged transactions and the forecast for their own department only   |
 
 Role routing happens after sign-in: `admin` and `finance_officer` go to the workspace,
 `department_head` goes to the department view. The restriction is enforced on the server, not in the
